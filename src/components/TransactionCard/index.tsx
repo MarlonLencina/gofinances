@@ -1,19 +1,16 @@
 import React from "react";
-import {} from "react-native"
 
 import { Container, Title, Amount, Footer, Category, Icon, CategoryName, Date } from "./styles";
 
-interface CategoryProps {
-    name: string;
-    icon: string;
-}
+import {categories} from '../../utils/categorias'
+
 
 export interface TransactionCardProps {
         type: 'positive' | 'negative';
-        title: string;
+        name: string;
         amount: string;
         date: string;
-        category: CategoryProps; 
+        category: string; 
     }
 
 
@@ -26,10 +23,14 @@ export const TransactionCard = (
         data
     }: Data) => {
 
+        const category = categories.filter(item => {
+            return item.key === data.category
+        })[0]
+
     return (
         <Container>
             <Title>
-                {data.title}
+                {data.name}
             </Title>
             <Amount type={data.type}>
                 {
@@ -38,8 +39,8 @@ export const TransactionCard = (
             </Amount>
             <Footer>
                 <Category>
-                    <Icon name={data.category.icon} />
-                    <CategoryName>{data.category.name}</CategoryName>
+                    <Icon name={category.icon} />
+                    <CategoryName>{category.name}</CategoryName>
                 </Category>
                 <Date>
                     {data.date}

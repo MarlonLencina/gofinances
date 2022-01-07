@@ -5,6 +5,7 @@ import { Container, Header, Title, Category, Icon, Name, Separator, Footer, } fr
 import { Button } from "../../components/forms/button";
 
 import {categories} from '../../utils/categorias'
+import { GestureHandlerRootView } from "react-native-gesture-handler";
 
 interface CategoryProps {
     key: string;
@@ -55,10 +56,9 @@ export const CategorySelect = ({
               }
             >
             </FlatList>
-
+                         
             <Footer>
-                <Button onPress={closeSelectCategory} title='Selecionar'>
-                </Button>
+                    <Button onPress={closeSelectCategory} title='Selecionar'/>
             </Footer>
 
         </Container>

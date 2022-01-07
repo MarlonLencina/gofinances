@@ -1,5 +1,7 @@
 
 import React, {
+    useCallback,
+    useEffect,
     useState
 } from "react";
 import {
@@ -11,11 +13,18 @@ import {
 
 import * as Yup from "yup"
 
+
+import uuid from 'react-native-uuid'
+
+import AsyncStorage from '@react-native-async-storage/async-storage'
+
 import { yupResolver } from "@hookform/resolvers/yup"
 
 import { Input } from "../../components/forms/input";
 
 import { Container, Header, SectionTitle, Form, Fields, TransactionsWrapper } from "./styles";
+
+import {useNavigation} from '@react-navigation/native'
 
 import { Button } from "../../components/forms/button";
 import { TransactionTypeButton } from "../../components/forms/transactionTypeButton";
@@ -28,6 +37,7 @@ import { InputForm } from "../../components/forms/inputForm";
 import {
     useForm
 } from 'react-hook-form'
+import { GestureHandlerRootView } from "react-native-gesture-handler";
 
 interface formData {
     name: string;
@@ -41,9 +51,12 @@ const schema = Yup.object().shape({
 
 export const Register = () => {
 
+    const navigation = useNavigation()
+
     const {
         control,
         handleSubmit,
+        reset,
         formState: {
             errors
         }
@@ -70,12 +83,13 @@ export const Register = () => {
         setTransactionType
     ] = useState('')
 
-    const handleTransactionTypeSelect = (type: 'up' | 'down') => {
+    const handleTransactionTypeSelect = (type: 'positive' | 'negative') => {
         setTransactionType(type)
     }
 
+    const dataKey = '@gofinances:transactions'
 
-    const handleRegister = (form: formData) => {
+    const handleRegister = async (form: formData) => {
 
         if(!transactionType)
             return Alert.alert('selecione o tipo da transação.')
@@ -85,20 +99,46 @@ export const Register = () => {
             return Alert.alert('selecione a categoria da transação.')
         
 
-        const data = {
+        const newTransaction = {
+            id: String(uuid.v4()),
             name: form.name,
             amount: form.amount,
             category: category.key,
-            type: transactionType
+            type: transactionType,
+            date: new Date()
         }
-        console.log(data)
+
+        try {
+
+             const oldData = await AsyncStorage.getItem(dataKey)
+             const currentData = oldData ? JSON.parse(oldData) : []
+
+             const dataFormated = [...currentData, newTransaction] 
+
+             await AsyncStorage.setItem(dataKey, JSON.stringify(dataFormated))
+
+             reset()
+             setTransactionType('')
+             setCategory({
+                key: 'category',
+                name: 'Categoria',
+            })
+
+            navigation.navigate('Listagem')
+
+        } catch (error) {
+            console.log(error)
+            Alert.alert('Não foi possivel salvar')
+        }
+
     }
+
 
     return (
     <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
         <Container>
             <Header>
-                <SectionTitle>Cadastro</SectionTitle>
+                <SectionTitle>Cadastrar</SectionTitle>
             </Header>
 
             <Form>
@@ -120,13 +160,16 @@ export const Register = () => {
                         />
 
                     <TransactionsWrapper>
-                            <TransactionTypeButton isActive={transactionType === 'up'} onPress={() => handleTransactionTypeSelect('up')} title="Income" type="up"/>
-                            <TransactionTypeButton isActive={transactionType === 'down'} onPress={() => handleTransactionTypeSelect('down')} title="Outcome" type="down"/>
+                            <TransactionTypeButton isActive={transactionType === 'positive'} onPress={() => handleTransactionTypeSelect('positive')} title="Income" type="up"/>
+                            <TransactionTypeButton isActive={transactionType === 'negative'} onPress={() => handleTransactionTypeSelect('negative')} title="Outcome" type="down"/>
                     </TransactionsWrapper>
 
-                <CategorySelectButton 
-                onPress={HandleOpenSelectCategory}
-                title={category.name} />
+                <GestureHandlerRootView>
+                    <CategorySelectButton 
+                    onPress={HandleOpenSelectCategory}
+                    title={category.name} />
+                </GestureHandlerRootView>
+
 
                 </Fields>
 
@@ -137,6 +180,7 @@ export const Register = () => {
 
             </Form>
 
+
             <Modal visible={categoryModalOpen}>
                 <CategorySelect
                 category={category}
@@ -144,6 +188,8 @@ export const Register = () => {
                 closeSelectCategory={HandleCloseSelectCategory}
                 />
             </Modal>
+
+
         </Container>
     </TouchableWithoutFeedback>
 
