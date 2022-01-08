@@ -15,7 +15,6 @@ import { Container
      ,Icon
      ,HighlightCards
      ,Transactions
-     ,Title
      ,LogoutButton,
      LoadContainer
     } from "./styles";
@@ -23,6 +22,7 @@ import { Container
 import { HighlightCard } from "../../components/HighlightCard";
 import { TransactionCard, TransactionCardProps } from "../../components/TransactionCard";
 import { getBottomSpace } from "react-native-iphone-x-helper";
+import { useAuth } from "../../hooks/authContext";
 
 export interface DataListProps extends TransactionCardProps {
     id: string;
@@ -41,27 +41,41 @@ interface IHighlighData {
 
 const getLastTransactionInDate = (collection: DataListProps[], type: 'positive' | 'negative') => {
 
-    const lastTransaction = Math.max.apply(Math, collection.filter((transaction: DataListProps) => transaction.type === type)
+        const transactions = collection.filter((transaction: DataListProps) => transaction.type === type)
         .map((transaction: DataListProps) => {
             return new Date(transaction.date).getTime()
-        }))
+        })
 
-        const lastTransactionFormatted = Intl.DateTimeFormat('pt-BR', {
-            day: '2-digit',
-            month: "2-digit",
-        }).format(new Date(lastTransaction))
+        if(!transactions[0]){
+            return 'Ainda não existem transaçoes.'
+        }
 
-        return `${new Date(lastTransaction).getDate()} de ${new Date(lastTransaction).toLocaleDateString("pt-BR", {month: "long"})}`
+        const transaction = Math.max(...transactions)
+
+        const typeTransaction = type === "positive" ? "entrada" : "saída"
+        // const lastTransactionFormatted = Intl.DateTimeFormat('pt-BR', {
+        //     day: '2-digit',
+        //     month: "2-digit",
+        // }).format(new Date(lastTransaction))
+
+        return `última ${typeTransaction} ${new Date(transaction).getDate()} de ${new Date(transaction).toLocaleDateString("pt-BR", {month: "long"})}`
 }
 
 export const Dashboard = () => {
+
+    const {
+        user,
+        signOut
+    } = useAuth()
+
+
 
     const theme = useTheme()
     const [isLoading, setIsLoading] = useState(true)
 
     const [transactions, setTransactions] = useState<DataListProps[]>([])
     const [highlightData, setHighlightData] = useState<IHighlighData>({} as IHighlighData)
-    const dataKey = '@gofinances:transactions'
+    const dataKey = `@gofinances:transactions_user:${user.id}`
 
 
 
@@ -105,23 +119,31 @@ export const Dashboard = () => {
 
         })
 
-        const lastTransactionEntries = getLastTransactionInDate(transactions, 'positive')
-        const lastTransactionExpansive = getLastTransactionInDate(transactions, 'negative')
-        const totalInterval = `01 de ${lastTransactionExpansive}`
 
-        console.log(lastTransactionEntries, lastTransactionExpansive)
+        const lastTransactionEntries = getLastTransactionInDate(transactions, 'positive')
+        const lastTransactionExpansives = getLastTransactionInDate(transactions, 'negative')
+
+        // const lastTransactionExpansive
+        // lastTransactionExpansive = transactions.lenght > 0 ?
+        // `Última saída ${getLastTransactionInDate(transactions, 'negative')}`
+        // : 'Ainda não existem transações.'
+
+
+        // const totalInterval
+        const totalInterval = transactions.length > 0 ? `Ultima movimentação: ${getLastTransactionInDate(transactions, 'negative')}` : 'Ainda não existem transações durante o periodo.'
+
 
          setTransactions(transactionsFormatted)
          setHighlightData({
              expensives: {
-                lastTransaction: `Última entrada ${lastTransactionExpansive}`,
+                lastTransaction: lastTransactionExpansives,
                  amount: expansive.toLocaleString('pt-BR', {
                      style: 'currency',
                      currency: 'BRL'
                  })
              },
              entries: {
-                lastTransaction: `Última saída ${lastTransactionEntries}`,
+                lastTransaction: lastTransactionEntries,
                  amount: entriesTotal.toLocaleString('pt-BR', {
                     style: 'currency',
                     currency: 'BRL'
@@ -153,14 +175,14 @@ export const Dashboard = () => {
             <Header>
                 <UserWrapper>
                     <UserInfo>
-                        <Avatar source={{uri: 'https://avatars.githubusercontent.com/u/92546209?v=4'}}>
+                        <Avatar source={{uri: user.photo}}>
                         </Avatar>
                         <User>
                             <UserGreeting>Óla,</UserGreeting>
-                            <UserName>Marlon</UserName>
+                            <UserName>{user.name}</UserName>
                         </User>
                     </UserInfo>
-                    <LogoutButton onPress={() => {}}>
+                    <LogoutButton onPress={signOut}>
                         <Icon name='power'/>
                     </LogoutButton>
                 </UserWrapper>

@@ -54,7 +54,7 @@ export const MonthSelectButton = styled.TouchableOpacity`
 
 export const MonthSelectIcon = styled(Feather)`
 
-font-size: ${RFValue(24)};
+font-size: ${RFValue(24)}px;
 
 `
 

@@ -1,6 +1,10 @@
-import { createContext, ReactNode, useContext, useState } from "react";
+import { createContext, ReactNode, useContext, useEffect, useState } from "react";
 
 import * as AuthSession from 'expo-auth-session'
+
+import AsyncStorage from "@react-native-async-storage/async-storage";
+
+import * as AppleAuthentication from 'expo-apple-authentication'
 
 interface UserProps {
     id: string;
@@ -17,7 +21,11 @@ interface AuthorizationResponse {
 }
 
 interface authContextData {
+    user: UserProps
+    userStorageIsLoading: boolean
     signWithGoogle: () => Promise<void>
+    signWithApple: () => Promise<void>
+    signOut: () => Promise<void>
 }
 
 export const AuthContext = createContext({} as authContextData)
@@ -28,7 +36,46 @@ export interface AuthProviderProps {
 
 const AuthProvider = ({children}: AuthProviderProps) => {
 
+    const userStorageKey = '@gofinances:user'
+
     const [user, setUser] = useState<UserProps>({} as UserProps)
+        
+    const [userStorageIsLoading, setUserStorageIsLoading] = useState(true)
+
+    const loadStorage = async () => {
+
+        const data = await AsyncStorage.getItem(userStorageKey)
+        const user = JSON.parse(data) as UserProps
+        setUser(user)
+        setUserStorageIsLoading(false)
+        // console.log(`buscando no storage => ${JSON.stringify(data)}`)
+
+    }
+
+    useEffect(() => {
+
+        loadStorage()
+
+    }, [])
+
+
+    // const LoadStorageData = async () => {
+
+    //     const response = await AsyncStorage.getItem(userStorageKey)
+
+    //     if(response){
+    //         const userLogged = JSON.parse(response) as UserProps;
+    //         setUser(userLogged)
+            
+    //         setUserStorageIsLoading(false)
+    //     }
+
+    // }
+
+    // useEffect(() => {
+    //     LoadStorageData()
+    // })
+
 
     async function signWithGoogle(){
 
@@ -46,7 +93,6 @@ const AuthProvider = ({children}: AuthProviderProps) => {
                 authUrl 
             }) as AuthorizationResponse
 
-            console.log(params, type)
 
             if(type === 'success'){
 
@@ -54,16 +100,19 @@ const AuthProvider = ({children}: AuthProviderProps) => {
 
                 const data = await response.json()
 
-
-                setUser({
+                const user = {
                     id: data.id,
                     email: data.email,
                     name: data.given_name,
                     photo: data.picture
-                })
                 }
 
-                console.log(user)
+                setUser(user)
+
+                await AsyncStorage.setItem(userStorageKey, JSON.stringify(user))
+                // console.log(`salvando no storage => ${JSON.stringify(JSON.stringify(user))}`)
+
+                }
 
         } catch (error) {
 
@@ -73,9 +122,52 @@ const AuthProvider = ({children}: AuthProviderProps) => {
     }
 
 
+    async function signWithApple(){
+
+
+        try {
+            
+            const credential = await AppleAuthentication.signInAsync({
+                requestedScopes: [
+                    AppleAuthentication.AppleAuthenticationScope.FULL_NAME,
+                    AppleAuthentication.AppleAuthenticationScope.EMAIL,
+
+                ]
+            })
+
+            if(credential){
+                const name = credential.fullName!.familyName!
+                const photo = `https://ui-avatars.com/api/?name=${name}&length=1`
+                const userLogged = {
+                    id: String(credential.user),
+                    email: credential.email!,
+                    name: credential.fullName!.familyName!,
+                    photo
+                }
+
+
+                setUser(userLogged)
+                await AsyncStorage.setItem(userStorageKey, JSON.stringify(userLogged))
+            }
+
+        } catch (error) {
+            console.log(error)
+            throw new Error('Falha na autenticação')            
+        }
+    }
+
+    async function signOut(){
+        setUser({} as UserProps)
+        await AsyncStorage.removeItem(userStorageKey)
+    }
+
     return (
         <AuthContext.Provider value={{
-            signWithGoogle
+            user,
+            signWithGoogle,
+            signWithApple,
+            signOut,
+            userStorageIsLoading
         }}>
             {children}
         </AuthContext.Provider>

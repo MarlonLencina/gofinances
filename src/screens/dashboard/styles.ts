@@ -13,9 +13,9 @@ import {Feather} from '@expo/vector-icons'
 
 import { DataListProps } from './index';
 import { FlatList } from 'react-native';
-import { BorderlessButton } from 'react-native-gesture-handler';
+import { BorderlessButton, GestureHandlerRootView } from 'react-native-gesture-handler';
 
-export const Container = styled.View`
+export const Container = styled(GestureHandlerRootView)`
     flex: 1;
  `
 

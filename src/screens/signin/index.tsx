@@ -1,4 +1,5 @@
-import React from "react";
+import React, { useState } from "react";
+import {ActivityIndicator, Platform} from "react-native"
 import { Container, Header, TitleWrapper, SignInTitle, Title, Footer, FooterWrapper } from "./styles";
 
 import Apple from '../../assets/apple.svg'
@@ -11,21 +12,41 @@ import { SignSocialButton } from "../../components/signInSocialButton";
 import { useAuth } from "../../hooks/authContext";
 import { Alert } from "react-native";
 
+import {useTheme} from "styled-components"
+
 export const SignIn = () => {
 
+    const theme = useTheme()
+
+    const [isLoading, setIsLoading] = useState(false)
+
     const {
-        signWithGoogle
+        signWithGoogle,
+        signWithApple
     } = useAuth()
 
     const handleSignWithGoogle = async () => {
 
         try {
-            
-            await signWithGoogle()
-
+            setIsLoading(true)
+            return await signWithGoogle()
         } catch (error) {
             console.log(error)
             Alert.alert('Occorreu um erro na atenticação.')
+            setIsLoading(false)
+        }
+    }
+
+    const handleSignWithApple = async () => {
+
+        try {
+            setIsLoading(true)
+            return await signWithApple()
+        } catch (error) {
+            console.log(error)
+            Alert.alert('Occorreu um erro na atenticação.')
+            setIsLoading(false)
+
         }
     }
 
@@ -49,10 +70,24 @@ export const SignIn = () => {
                 </SignInTitle>
             </Header>
             <Footer>
-                <FooterWrapper>
-                    <SignSocialButton title="entrar com Google" onPress={handleSignWithGoogle} svg={Google}/>
-                    <SignSocialButton title="entrar com Apple" svg={Apple}/>
-                </FooterWrapper>
+            
+            {
+
+            isLoading ? <ActivityIndicator color={theme.colors.shape} size='large' style={{marginTop: 18}} ></ActivityIndicator> :         
+            <FooterWrapper>
+                
+                <SignSocialButton title="entrar com Google" onPress={handleSignWithGoogle} svg={Google}/>
+                
+                
+                {
+                    Platform.OS === 'ios' && <SignSocialButton title="entrar com Apple" onPress={handleSignWithApple} svg={Apple}/>
+                }
+
+                
+            </FooterWrapper>
+
+        }
+
             </Footer>
         </Container>
     )

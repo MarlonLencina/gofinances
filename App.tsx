@@ -9,7 +9,9 @@ import 'intl/locale-data/jsonp/pt-BR'
 
 import { SignIn } from './src/screens/signin';
 
-import { NavigationContainer } from '@react-navigation/native';
+import { Routes } from './src/routes';
+
+import { useAuth } from './src/hooks/authContext';
 
 import { useFonts, Poppins_400Regular, Poppins_500Medium, Poppins_700Bold } from '@expo-google-fonts/poppins'
 import { AppRoutes } from './src/routes/app.routes';
@@ -18,25 +20,26 @@ import { AuthProvider } from './src/hooks/authContext';
 
 export default function App() {
 
+  const {
+    userStorageIsLoading
+  } = useAuth()
+
   const [fontsLoaded] = useFonts({
     Poppins_400Regular,
     Poppins_500Medium,
     Poppins_700Bold
   })
 
-  if(!fontsLoaded){
+  if(!fontsLoaded || userStorageIsLoading){
     return <AppLoading/>
   }
 
   return (
     <ThemeProvider theme={theme}>
-      <NavigationContainer>
         <StatusBar backgroundColor={theme.colors.primary}/>
-        {/* <AppRoutes/> */}
         <AuthProvider>
-          <SignIn/>
+          <Routes/>
         </AuthProvider>
-      </NavigationContainer>
     </ThemeProvider>
   )
 }

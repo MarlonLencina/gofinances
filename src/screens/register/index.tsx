@@ -38,6 +38,7 @@ import {
     useForm
 } from 'react-hook-form'
 import { GestureHandlerRootView } from "react-native-gesture-handler";
+import { useAuth } from "../../hooks/authContext";
 
 interface formData {
     name: string;
@@ -51,6 +52,9 @@ const schema = Yup.object().shape({
 
 export const Register = () => {
 
+    const {
+        user
+    } = useAuth()
     const navigation = useNavigation()
 
     const {
@@ -87,7 +91,7 @@ export const Register = () => {
         setTransactionType(type)
     }
 
-    const dataKey = '@gofinances:transactions'
+    const dataKey = `@gofinances:transactions_user:${user.id}`
 
     const handleRegister = async (form: formData) => {
 

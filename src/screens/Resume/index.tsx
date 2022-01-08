@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { HistoryCard } from "../../components/historyCard";
 
 import {
@@ -28,6 +28,8 @@ import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
 import {
     ptBR
 } from 'date-fns/locale'
+import { useAuth } from "../../hooks/authContext";
+import { useFocusEffect } from "@react-navigation/native";
 
 interface TransactionProps {
     type: 'positive' | 'negative';
@@ -49,6 +51,11 @@ interface categoryData {
 
 export const Resume = () => {
 
+
+    const {
+        user
+    } = useAuth()
+
     const [isLoading, setIsLoading] = useState(true)
 
     const [selecteDate, setSelectedDate] = useState(new Date())
@@ -66,7 +73,7 @@ export const Resume = () => {
 
     const theme = useTheme()
 
-    const dataKey = '@gofinances:transactions'
+    const dataKey = `@gofinances:transactions_user:${user.id}`
     const [totalByCategories, setTotalByCategories] = useState<categoryData[]>([])
 
     const loadData = async () => {
@@ -122,16 +129,15 @@ export const Resume = () => {
         })
 
     
-        console.log(totalByCategory)
         setTotalByCategories(totalByCategory)
 
 
         setIsLoading(false)
     }
 
-    useEffect(() => {
+    useFocusEffect(useCallback(() => {
         loadData()
-    }, [selecteDate])
+    }, []))
 
     return (
         <Container>
